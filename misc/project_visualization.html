@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<title>SOCOLOON</title>
+<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' /><body>
+<style>
+body {
+  font-family: Univers, Arial, sans-serif;
+}
+.button rect {
+  stroke: "grey"; /* navy 40% */
+  stroke-width: 2px;
+}
+.button rect.pressed {
+  fill: #D1913C; /* navy 100% */
+}
+.button #gradient-start {
+  stop-color: #D1913C; /* navy 40% */
+  stop-opacity: 1;
+}
+.button #gradient-stop {
+  stop-color: #D1913C; /* navy 70% */
+  stop-opacity: 1;
+}
+.button #gradient-start.active, .button #gradient-start.pressed {
+  stop-color: "white" /* navy 70% */
+}
+.button #gradient-stop.active, .button #gradient-stop.pressed {
+  stop-color: #B22222; /* navy 100% */
+}
+.button text {
+  font-size: 18px;
+  color: black;
+  fill: #eee;
+  pointer-events: none;
+  text-anchor: middle;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+input {border: 2px solid black; text-align: center; background: white; font-family: monospace; padding: 10px 20px; font-size: 18px; width: auto; opacity: 1; margin: 20px 10px 20px; color: #DC143C;}
+input:focus { background-color: yellow; outline: none;}
+form {display: block; text-align: center; top: 360px;}
+#mapid { height: 390px;}
+
+</style>
+<body bgcolor="#f2af8a">
+<div id="mapid"></div>
+<form name="myform" onSubmit="return handleClick()">
+        <input type ="text"  id="myPrice" maxlength="" placeholder="Price ($)" />
+        <input type ="text"  id="myPrice2" maxlength="" placeholder="Distance (meters)" />
+        <input type ="text" id="myRadius" maxlength="" placeholder= "Your Key Words"/> <br>
+    </form>
+
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="d3.button.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+
+<!-- Load Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" ></script>
+<script>
+var margin = {top: 50, right: 50, bottom: 50, left: 50}
+  width = window.innerWidth - margin.left - margin.right;
+  height = 140;
+
+var map = L
+  .map("mapid")
+  .setView([36.167233, -115.139999], 13);   // center position + zoom
+
+// Add a tile to the map = a background. Comes from OpenStreetmap
+L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+    maxZoom: 15,
+    }).addTo(map);
+
+// Add a svg layer to the map
+L.svg().addTo(map);
+
+// Create data for circles:
+var markers = [
+  {long:  -115.132578, lat: 36.162806}, // corsica
+  {long:  -115.148754, lat: 36.163459}, // nice
+  {long:  -115.132840, lat: 36.175968}, // Paris
+
+];
+
+var svgMap = d3.select(map.getPanes().overlayPane).append("svg"),
+    gMap = svgMap.append("g").attr("class", "leaflet-zoom-hide");
+
+
+colorsch = {0: '#B3A369', 1: '#c0c0c0', 2: '#cd7f32'}
+// Select the svg area and add circles:
+d3.select("#mapid")
+  .select("svg")
+  .selectAll("myCircles")
+  .data(markers)
+  .enter()
+  .append("circle")
+    .attr("cx", function(d){ return map.latLngToLayerPoint([d.lat, d.long]).x })
+    .attr("cy", function(d){ return map.latLngToLayerPoint([d.lat, d.long]).y })
+    .attr("r", 10)
+    .style("fill", function(d, i){ return colorsch[i] })
+    .attr("stroke", "red")
+    .attr("stroke-width", 2)
+    .attr("fill-opacity", 1)
+
+
+  d3.select("#mapid")
+  .select("svg")
+  .append("button")
+  .attr("id", function(d) { return d; })
+
+// Function that update circle position if something change
+function update() {
+  d3.selectAll("circle")
+    .attr("cx", function(d){ return map.latLngToLayerPoint([d.lat, d.long]).x })
+    .attr("cy", function(d){ return map.latLngToLayerPoint([d.lat, d.long]).y })
+}
+
+// If the user change the map (zoom or drag), I update circle position:
+map.on("moveend", update)
+
+
+
+
+
+var data = [{label: "What’s the secret sauce?",     x: width / 3, y: height / 4 },
+            {label: "Socoloon Party", x: 2*width / 3, y: height / 4 }];
+var svg = d3.select('body').append('svg')
+    .attr('width', width + 90)
+    .attr('height', height + 40);
+var button = d3.button()
+    .on('press', function(d, i) { console.log("Pressed", d, i, this.parentNode)})
+    .on('release', function(d, i) { console.log("Released", d, i, this.parentNode)});
+// Add buttons
+var buttons = svg.selectAll('.button')
+    .data(data)
+  .enter()
+    .append('g')
+    .attr('class', 'button')
+    .attr("id", function(d,i) {return "button " + i;})
+    .call(button);
+
+var img = svg.append("g").append("svg:image")
+    .attr("xlink:href", "./socoloonlogo.png")
+    .attr("width", 400)
+    .attr("height", 125)
+    .attr("x", window.innerWidth/2 - 240)
+    .attr("y", 55);
+
+var img2 = svg.append("rect")
+          .attr("width", window.innerWidth + "px")
+          .attr("height", 2)
+          .attr("x", 0)
+          .attr("y", 70)
+          .style("fill", "black")
+
+</script>
+</body>
